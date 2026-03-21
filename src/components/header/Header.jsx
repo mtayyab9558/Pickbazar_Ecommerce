@@ -8,7 +8,7 @@ const Header = () => {
   const [isLoggedIn, setLoggedIn] = useState(false);
   const navigate = useNavigate();
 
-  const { products } = useSelector((state) => state.products);
+  const { cartProducts } = useSelector((state) => state.products);
 
   return (
     <nav className="relative after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px">
@@ -145,9 +145,9 @@ const Header = () => {
                   commandfor="drawer"
                   className="relative rounded-lg p-2 text-gray-700 transition hover:bg-gray-50 hover:text-[#019376] cursor-pointer"
                 >
-                  {products.length > 0 && (
+                  {cartProducts.length > 0 && (
                     <span className="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-[#019376] text-white text-xs w-5 h-5">
-                      {products.length}
+                      {cartProducts.length}
                     </span>
                   )}
                   <ShoppingBag className="text-[#1F2937] hover:text-[#019376] m-2" />

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { DummyProducts } from "../dummyproducts/DummyProducts";
+//import { DummyProducts } from "../dummyproducts/DummyProducts";
 import { ShoppingBag } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -8,64 +8,83 @@ import {
   decreaseQuantity,
   removeFromCart,
 } from "../../store/slices/productSlice.js";
+import { fetchUsers } from "../../store/thunk/usersThunk.js";
+import { fetchProducts } from "../../store/thunk/productThunk.js";
 
-const Categories = [
-  {
-    id: 1,
-    name: "Fruits & Vegetables",
-    subCategories: [
-      {
-        name: "Fruits",
-        value: "fruits",
-      },
-      {
-        name: "Vegetables",
-        value: "vegetables",
-      },
-    ],
-  },
-  {
-    id: 2,
-    name: "Meat & Fish",
-    subCategories: [
-      {
-        name: "Meat",
-        value: "meat",
-      },
-      {
-        name: "Fish",
-        value: "fish",
-      },
-    ],
-  },
-  {
-    id: 3,
-    name: "Fish & Seafood",
-    subCategories: [
-      {
-        name: "Fish",
-        value: "fish",
-      },
-      {
-        name: "Seafood",
-        value: "seafood",
-      },
-    ],
-  },
-];
+// const Categories = [
+//   {
+//     id: 1,
+//     name: "Fruits & Vegetables",
+//     subCategories: [
+//       {
+//         name: "Fruits",
+//         value: "fruits",
+//       },
+//       {
+//         name: "Vegetables",
+//         value: "vegetables",
+//       },
+//     ],
+//   },
+//   {
+//     id: 2,
+//     name: "Meat & Fish",
+//     subCategories: [
+//       {
+//         name: "Meat",
+//         value: "meat",
+//       },
+//       {
+//         name: "Fish",
+//         value: "fish",
+//       },
+//     ],
+//   },
+//   {
+//     id: 3,
+//     name: "Fish & Seafood",
+//     subCategories: [
+//       {
+//         name: "Fish",
+//         value: "fish",
+//       },
+//       {
+//         name: "Seafood",
+//         value: "seafood",
+//       },
+//     ],
+//   },
+// ];
 
 const Products = () => {
   const [filters, setFilters] = useState([]);
 
-  const [products, setProducts] = useState(DummyProducts);
+  // const [products, setProducts] = useState(DummyProducts);
 
-  const [cartItems, setCartItems] = useState([]);
+  // const [cartItems, setCartItems] = useState([]);
 
   const dispatch = useDispatch();
 
-  const { products: storeProducts } = useSelector((state) => state.products);
+  const { products: storeProducts, cartProducts } = useSelector(
+    (state) => state.products,
+  );
+  const { users, loader } = useSelector((state) => state.users);
 
-  const totalAmount = storeProducts.reduce(
+  const Categories = [...new Set(storeProducts.map((p) => p.category))].map(
+    (cat, index) => ({
+      id: index,
+      name: cat,
+      value: cat,
+    }),
+  );
+
+  console.log(Categories, "Categories");
+
+  console.log(storeProducts, "storeproducts");
+  console.log(users, "users");
+  console.log(loader, "loader");
+
+  const totalAmount = cartProducts.reduce(
     (total, item) => total + item.price * item.quantity,
     0,
   );
@@ -78,16 +97,28 @@ const Products = () => {
     );
   };
 
+  // useEffect(() => {
+  //   if (filters.length === 0) {
+  //     setProducts(DummyProducts);
+  //   } else {
+  //     const filteredProducts = DummyProducts.filter((product) =>
+  //       filters.includes(product.category),
+  //     );
+  //     setProducts(filteredProducts);
+  //   }
+  // }, [filters]);
+
+  //const filteredProducts = storeProducts;
+
+  const filteredProducts =
+    filters.length === 0
+      ? storeProducts
+      : storeProducts.filter((product) => filters.includes(product.category));
+
   useEffect(() => {
-    if (filters.length === 0) {
-      setProducts(DummyProducts);
-    } else {
-      const filteredProducts = DummyProducts.filter((product) =>
-        filters.includes(product.category),
-      );
-      setProducts(filteredProducts);
-    }
-  }, [filters]);
+    dispatch(fetchUsers());
+    dispatch(fetchProducts());
+  }, [dispatch]);
 
   return (
     <div id="products" className="bg-[#F3F4F6] min-h-screen relative">
@@ -101,48 +132,39 @@ const Products = () => {
             {Categories.map((category) => {
               return (
                 <div key={category.id}>
-                  <h1>{category.name}</h1>
-                  <div>
-                    {category?.subCategories?.map((subcategory) => {
-                      return (
-                        <div key={subcategory.value}>
-                          <input
-                            type="checkbox"
-                            name={subcategory.value}
-                            id={subcategory.value}
-                            onChange={() => filterHandler(subcategory)}
-                          />
-                          <label htmlFor={subcategory.value}>
-                            {subcategory.name}
-                          </label>
-                        </div>
-                      );
-                    })}
-                  </div>
+                  <input
+                    type="checkbox"
+                    id={category.value}
+                    onChange={() => filterHandler(category)}
+                  />
+                  <label htmlFor={category.value} className="ml-2 text-sm text-gray-700">
+                    {category.name.charAt(0).toUpperCase() +
+                      category.name.slice(1)}
+                  </label>
                 </div>
               );
             })}
           </div>
           <div className="col-span-5 w-275 2">
             <div className="mt-3 grid grid-cols-6 gap-x-3 gap-y-4 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-4">
-              {products.map((product) => {
+              {filteredProducts.map((product) => {
                 return (
                   <div
                     key={product.id}
                     className="col-span-1 group relative bg-white shadow-md rounded-md p-4"
                   >
                     <img
-                      src={product.image}
-                      alt={product.name}
+                      src={product.images?.[0] || product.thumbnail}
+                      alt={product.title}
                       className="aspect-square w-full rounded-md bg-gray-200 object-cover group-hover:opacity-75 lg:aspect-auto lg:h-80"
                     />
                     <div className="mt-4 flex justify-between">
                       <div>
                         <h3 className="text-sm font-medium text-gray-900">
-                          {product.name}
+                          {product.title}
                         </h3>
                         <p className="mt-1 text-sm text-gray-500">
-                          {product.weight}
+                          {product.category}
                         </p>
                       </div>
                       <p className="text-sm font-medium text-[#009F7F]">
@@ -181,9 +203,9 @@ const Products = () => {
         commandfor="drawer"
         className="absolute top-80 right-4"
       >
-        {storeProducts.length > 0 && (
+        {cartProducts.length > 0 && (
           <span className="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-[#019376] text-white text-xs w-5 h-5">
-            {storeProducts.length}
+            {cartProducts.length}
           </span>
         )}
         <ShoppingBag className="text-[#1F2937] hover:text-[#019376] m-2" />
@@ -230,7 +252,7 @@ const Products = () => {
 
               <div className="relative flex h-full flex-col overflow-y-auto bg-white py-6 shadow-xl">
                 <div className="px-4 sm:px-6">
-                  {storeProducts.length === 0 ? (
+                  {cartProducts.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full">
                       <svg
                         className="h-12 w-12 text-gray-400"
@@ -251,20 +273,20 @@ const Products = () => {
                     </div>
                   ) : (
                     <div className="flex flex-col space-y-4">
-                      {storeProducts.map((item) => (
+                      {cartProducts.map((item) => (
                         <div
                           key={item.id}
                           className="flex items-center justify-between border-b border-gray-200 py-4"
                         >
                           <div className="flex items-center">
                             <img
-                              src={item.image}
-                              alt={item.name}
+                              src={item.thumbnail}
+                              alt={item.title}
                               className="h-16 w-16 object-cover rounded-md"
                             />
                             <div className="ml-4">
                               <h3 className="text-lg font-medium text-gray-900">
-                                {item.name}
+                                {item.title}
                               </h3>
                               <p className="text-sm font-medium text-[#009F7F]">
                                 Price: $
@@ -315,7 +337,7 @@ const Products = () => {
                       <span>Total Amount</span>
 
                       <span>
-                        {storeProducts.length} Items | ${totalAmount.toFixed(2)}
+                        {cartProducts.length} Items | ${totalAmount.toFixed(2)}
                       </span>
                     </button>
                   </div>
