@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { use, useEffect, useState } from "react";
 import Logo from "../../assets/logo.png";
 import { useNavigate } from "react-router-dom";
 import { ShoppingBag } from "lucide-react";
@@ -7,6 +7,10 @@ import { useSelector } from "react-redux";
 const Header = () => {
   const [isLoggedIn, setLoggedIn] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken") && setLoggedIn(true);
+  }, []);
 
   const { cartProducts } = useSelector((state) => state.products);
 

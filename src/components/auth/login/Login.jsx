@@ -1,10 +1,11 @@
-import React from "react";
+import React, {useEffect} from "react";
 import PickBazarLogo from "../../../assets/logo.png";
 import { useForm } from "react-hook-form";
-import { data } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
+import { signInWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEmail } from "firebase/auth";
+import { auth } from "../../../config/firebase";
 
 const loginSchema = yup.object({
   email: yup
@@ -20,14 +21,57 @@ const loginSchema = yup.object({
 const Login = () => {
   const navigate = useNavigate();
   
-  const { register, handleSubmit, formState: { errors } } = useForm({
-    resolver: yupResolver(loginSchema),
-  });
+ const { register, handleSubmit, watch, formState: { errors } } = useForm({
+  resolver: yupResolver(loginSchema),
+});
+
+ const handleForgotPassword = async () => {
+  const email = watch("email");
+
+  if (!email) {
+    alert("Please enter your email first");
+    return;
+  }
+
+  try {
+    await sendPasswordResetEmail(auth, email);
+    alert("Password reset email sent ✅");
+  } catch (error) {
+    console.error(error.message);
+    alert(error.message);
+  }
+};
   
-  const loginUser = (data) => {
-    console.log(data);
+  const loginUser = async (data) => {
+  try {
+    const response = await signInWithEmailAndPassword(
+      auth,
+      data.email,
+      data.password
+    );
+
+    const token = await response.user.getIdToken();
+    localStorage.setItem("accessToken", token);
+
     navigate("/");
-  };
+  } catch (error) {
+    console.error("FULL ERROR:", error);
+    alert(error.code + " - " + error.message);
+  }
+};
+
+useEffect(() => {
+  const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      const token = await user.getIdToken();
+      localStorage.setItem("accessToken", token);
+    } else {
+      localStorage.removeItem("accessToken");
+    }
+  });
+
+  return () => unsubscribe();
+}, []);
 
   console.log(errors);
   return (
@@ -75,7 +119,10 @@ const Login = () => {
               </label>
               <div className="text-sm">
                 <a
-                  href="#"
+                  href="#" onClick={(e) => {
+                    e.preventDefault();
+                    handleForgotPassword();
+                  }}
                   className="font-semibold text-[#019376]/80 hover:text-[#019376]/60"
                 >
                   Forgot password?

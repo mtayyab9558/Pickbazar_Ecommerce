@@ -5,6 +5,8 @@ import { data } from 'react-router-dom';
 import { useNavigate } from "react-router-dom";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../../../config/firebase";
 
 const registerSchema = yup.object({
   firstname: yup
@@ -32,9 +34,14 @@ const Register = () => {
         resolver: yupResolver(registerSchema),
     });
     
-    const registerUser = (data) => {
-        console.log(data);
-        navigate("/login");
+    const registerUser = async (data) => {
+        //console.log(data);
+        
+        const response = await createUserWithEmailAndPassword(auth, data.email, data.password);
+        console.log(response);
+        if (response.user.accessToken) {
+          navigate("/login");
+        }
     };
     
   return (
